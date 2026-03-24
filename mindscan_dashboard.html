@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindScan — Mental Health Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f5f0e8;
+  --paper: #faf7f2;
+  --ink: #1a1410;
+  --ink-light: #5a4e42;
+  --ink-muted: #9a8e82;
+  --accent: #c0392b;
+  --accent2: #2c7a4b;
+  --accent3: #1a5276;
+  --warn: #d4890a;
+  --border: rgba(26,20,16,0.12);
+  --font-serif: 'Playfair Display', serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle grid texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(26,20,16,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,20,16,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none; z-index: 0;
+}
+
+.app {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+/* Header */
+header {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 24px;
+  margin-bottom: 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  animation: fadeUp 0.6s ease both;
+}
+
+.logo {
+  font-family: var(--font-serif);
+  font-size: clamp(40px, 7vw, 68px);
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.logo em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.tagline {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+
+.status-badge {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border: 1px solid var(--border);
+  padding: 8px 16px; border-radius: 2px;
+  background: var(--paper);
+}
+
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ink-muted);
+  transition: background 0.3s;
+}
+
+.status-badge.connected .status-dot { background: var(--accent2); }
+.status-badge.connected { color: var(--accent2); border-color: var(--accent2); }
+
+/* Section titles */
+.section-title {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 28px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Cards */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  padding: 32px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s ease both;
+}
+
+/* Predictor section */
+.predictor-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.text-area-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+textarea {
+  width: 100%; height: 180px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+  line-height: 1.7;
+  transition: border-color 0.2s;
+}
+
+textarea:focus { border-color: var(--ink); }
+textarea::placeholder { color: var(--ink-muted); }
+
+.model-select-wrap {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+
+.model-btn {
+  padding: 8px 20px;
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.model-btn:hover { border-color: var(--ink); color: var(--ink); }
+.model-btn.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.predict-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 12px; letter-spacing: 3px;
+  text-transform: uppercase;
+  border: none; cursor: pointer;
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+
+.predict-btn:hover { background: var(--accent); }
+.predict-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Result panel */
+.result-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.result-empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 12px;
+  color: var(--ink-muted); font-size: 12px;
+  letter-spacing: 1px; text-align: center;
+}
+
+.result-label-title {
+  font-size: 10px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+
+.result-prediction {
+  font-family: var(--font-serif);
+  font-size: 36px; font-weight: 700;
+  letter-spacing: -1px; line-height: 1;
+}
+
+.result-confidence {
+  font-size: 13px; color: var(--ink-light);
+}
+
+/* Probability bars */
+.prob-bars { display: flex; flex-direction: column; gap: 8px; }
+
+.prob-row { display: flex; flex-direction: column; gap: 4px; }
+
+.prob-header {
+  display: flex; justify-content: space-between;
+  font-size: 10px; letter-spacing: 1px;
+}
+
+.prob-label { color: var(--ink-light); }
+.prob-val { color: var(--ink-muted); }
+
+.prob-track {
+  height: 3px; background: var(--border);
+  position: relative; overflow: hidden;
+}
+
+.prob-fill {
+  height: 100%; background: var(--ink);
+  transition: width 0.8s cubic-bezier(0.34,1.2,0.64,1);
+  width: 0%;
+}
+
+/* Color tags per class */
+.tag-anxiety { color: #d4890a; }
+.tag-bipolar { color: #7d3c98; }
+.tag-depression { color: #1a5276; }
+.tag-normal { color: #2c7a4b; }
+.tag-personality { color: #884ea0; }
+.tag-stress { color: #c0392b; }
+.tag-suicidal { color: #922b21; }
+
+.fill-anxiety { background: #d4890a; }
+.fill-bipolar { background: #7d3c98; }
+.fill-depression { background: #1a5276; }
+.fill-normal { background: #2c7a4b; }
+.fill-personality { background: #884ea0; }
+.fill-stress { background: #c0392b; }
+.fill-suicidal { background: #922b21; }
+
+/* Compare all button */
+.compare-btn {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px; letter-spacing: 3px;
+  text-transform: uppercase;
+  border: 1px solid var(--ink);
+  cursor: pointer; transition: all 0.2s;
+  margin-bottom: 24px;
+}
+
+.compare-btn:hover { background: var(--ink); color: var(--bg); }
+
+/* Compare results */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+  display: none;
+}
+
+.compare-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  padding: 20px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.compare-model-name {
+  font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+
+.compare-pred {
+  font-family: var(--font-serif);
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.5px; margin-bottom: 4px;
+}
+
+.compare-conf {
+  font-size: 11px; color: var(--ink-muted);
+}
+
+.winner-badge {
+  display: inline-block;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 8px; margin-top: 8px;
+}
+
+/* Model Performance section */
+.perf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.perf-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+
+.perf-model { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px; }
+.perf-acc { font-family: var(--font-serif); font-size: 36px; font-weight: 700; color: var(--ink); line-height: 1; }
+.perf-sub { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+.perf-metrics { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.perf-metric-row { display: flex; justify-content: space-between; font-size: 11px; }
+.perf-metric-label { color: var(--ink-muted); }
+.perf-metric-val { color: var(--ink); font-weight: 500; }
+.best-badge { display: inline-block; background: var(--accent2); color: white; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; margin-bottom: 8px; }
+
+/* Charts */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.chart-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+
+.chart-title {
+  font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--ink-muted);
+  margin-bottom: 20px;
+}
+
+.chart-wrap { position: relative; height: 260px; }
+
+/* Disclaimer */
+.disclaimer {
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  line-height: 1.8;
+  margin-top: 24px;
+  background: var(--paper);
+}
+
+.disclaimer strong { color: var(--ink); }
+
+/* Loading spinner */
+.spinner {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle; margin-right: 8px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+@media(max-width:768px) {
+  .predictor-grid, .charts-grid, .perf-grid, .compare-grid { grid-template-columns: 1fr; }
+  header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .logo { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div>
+      <div class="logo">Mind<em>Scan</em></div>
+      <div class="tagline">Mental Health Detection · NLP Research Tool</div>
+    </div>
+    <div class="status-badge" id="statusBadge">
+      <div class="status-dot"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+  </header>
+
+  <!-- Section 1: Live Predictor -->
+  <div class="section-title">Live Predictor</div>
+  <div class="section-label">Enter text to analyze mental health indicators</div>
+
+  <div class="predictor-grid">
+    <div class="text-area-wrap">
+      <textarea id="inputText" placeholder="Enter social media post, journal entry, or any text to analyze...&#10;&#10;Example: 'I feel so empty and hopeless. Nothing seems to matter anymore and I can't stop crying.'"></textarea>
+
+      <div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px;">Select Model</div>
+        <div class="model-select-wrap">
+          <button class="model-btn active" onclick="selectModel(this,'SVM')">SVM</button>
+          <button class="model-btn" onclick="selectModel(this,'Logistic Regression')">Logistic Regression</button>
+          <button class="model-btn" onclick="selectModel(this,'DistilBERT')">DistilBERT</button>
+        </div>
+      </div>
+
+      <button class="predict-btn" id="predictBtn" onclick="predict()">→ Analyze Text</button>
+    </div>
+
+    <!-- Result panel -->
+    <div class="result-panel" id="resultPanel">
+      <div class="result-empty" id="resultEmpty">
+        <div style="font-size:32px;">◎</div>
+        <div>Awaiting input</div>
+        <div style="font-size:10px;opacity:0.6;">Enter text and click Analyze</div>
+      </div>
+      <div id="resultContent" style="display:none;">
+        <div>
+          <div class="result-label-title">Detected Condition</div>
+          <div class="result-prediction" id="resultPrediction">—</div>
+          <div class="result-confidence" id="resultConfidence">—</div>
+        </div>
+        <div class="prob-bars" id="probBars"></div>
+        <div style="font-size:10px;color:var(--ink-muted);letter-spacing:1px;" id="resultModel">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compare All Models -->
+  <button class="compare-btn" id="compareBtn" onclick="compareAll()">⊕ Compare All Models on This Text</button>
+
+  <div class="compare-grid" id="compareGrid"></div>
+
+  <!-- Section 2: Model Performance -->
+  <div class="section-title">Model Comparison</div>
+  <div class="section-label">Performance metrics across all trained models</div>
+
+  <div class="perf-grid" id="perfGrid">
+    <div class="perf-card" style="color:var(--ink-muted);font-size:12px;padding:40px;text-align:center;">Loading...</div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Accuracy · F1 · ROC-AUC Comparison</div>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Per-Class F1 Score (Best Model)</div>
+      <div class="chart-wrap"><canvas id="classChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <strong>⚠ Research Tool Only.</strong> MindScan is an academic NLP research project and is not a clinical diagnostic tool.
+    Predictions are based on patterns in training data and should not be used as medical advice.
+    If you or someone you know is struggling, please contact a mental health professional or crisis helpline.
+  </div>
+
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5001';
+let selectedModel = 'SVM';
+let modelResults = null;
+let barChart = null, classChart = null;
+
+const CLASS_COLORS = {
+  'Anxiety':              '#d4890a',
+  'Bipolar':              '#7d3c98',
+  'Depression':           '#1a5276',
+  'Normal':               '#2c7a4b',
+  'Personality disorder': '#884ea0',
+  'Stress':               '#c0392b',
+  'Suicidal':             '#922b21',
+};
+
+const CLASS_FILL = {
+  'Anxiety':'fill-anxiety','Bipolar':'fill-bipolar','Depression':'fill-depression',
+  'Normal':'fill-normal','Personality disorder':'fill-personality',
+  'Stress':'fill-stress','Suicidal':'fill-suicidal'
+};
+
+function selectModel(btn, model) {
+  document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedModel = model;
+}
+
+function showToast(msg, type='info') {
+  // simple console for now
+  console.log(msg);
+}
+
+async function checkAPI() {
+  const badge = document.getElementById('statusBadge');
+  const text  = document.getElementById('statusText');
+  try {
+    const res = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      badge.className = 'status-badge connected';
+      text.textContent = 'API connected';
+      return true;
+    }
+  } catch {
+    badge.className = 'status-badge';
+    text.textContent = 'API offline — run app.py';
+  }
+  return false;
+}
+
+function showError(msg) {
+  document.getElementById('resultEmpty').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'none';
+  let errEl = document.getElementById('resultError');
+  if (!errEl) {
+    errEl = document.createElement('div');
+    errEl.id = 'resultError';
+    errEl.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--accent);font-size:12px;letter-spacing:1px;text-align:center;padding:20px;';
+    document.getElementById('resultPanel').appendChild(errEl);
+  }
+  errEl.style.display = 'flex';
+  errEl.innerHTML = `<div style="font-size:28px;">⚠</div><div>${msg}</div><div style="font-size:10px;opacity:0.7;">Make sure app.py is running on port 5000</div>`;
+}
+
+async function predict() {
+  const inputText = document.getElementById('inputText').value.trim();
+  if (!inputText) { showError('Please enter some text first!'); return; }
+
+  // Clear any previous error
+  const errEl = document.getElementById('resultError');
+  if (errEl) errEl.style.display = 'none';
+
+  const btn = document.getElementById('predictBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+
+  try {
+    const res = await fetch(`${API}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: inputText, model: selectedModel })
+    });
+    const data = await res.json();
+    if (data.error) { showError(data.error); return; }
+    showResult(data);
+  } catch {
+    showError('Could not reach API.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '→ Analyze Text';
+}
+
+function showResult(data) {
+  document.getElementById('resultEmpty').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'flex';
+  document.getElementById('resultContent').style.flexDirection = 'column';
+  document.getElementById('resultContent').style.gap = '16px';
+
+  const pred = data.prediction;
+  const predEl = document.getElementById('resultPrediction');
+  predEl.textContent = pred;
+  predEl.className = `result-prediction tag-${pred.toLowerCase().replace(/\s+/g,'').replace('disorder','')}`;
+
+  document.getElementById('resultConfidence').textContent = `${data.confidence}% confidence · ${data.model}`;
+  document.getElementById('resultModel').textContent = `Model: ${data.model}`;
+
+  // Probability bars
+  const probs = data.all_probabilities;
+  const sorted = Object.entries(probs).sort((a,b) => b[1]-a[1]);
+  const barsEl = document.getElementById('probBars');
+  barsEl.innerHTML = sorted.map(([cls, prob]) => `
+    <div class="prob-row">
+      <div class="prob-header">
+        <span class="prob-label">${cls}</span>
+        <span class="prob-val">${prob}%</span>
+      </div>
+      <div class="prob-track">
+        <div class="prob-fill ${CLASS_FILL[cls] || ''}" data-width="${prob}"></div>
+      </div>
+    </div>
+  `).join('');
+
+  setTimeout(() => {
+    document.querySelectorAll('.prob-fill').forEach(el => {
+      el.style.width = el.dataset.width + '%';
+    });
+  }, 100);
+}
+
+async function compareAll() {
+  const inputText = document.getElementById('inputText').value.trim();
+  if (!inputText) { showError('Please enter some text first!'); return; }
+
+  const btn = document.getElementById('compareBtn');
+  btn.textContent = 'Comparing all models...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/predict-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: inputText })
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+
+    const grid = document.getElementById('compareGrid');
+    grid.style.display = 'grid';
+
+    // Find most confident prediction
+    const models = data.models_used;
+    grid.innerHTML = models.map(m => {
+      const r = data.results[m];
+      const isBest = modelResults && m === modelResults.best_model;
+      return `
+        <div class="compare-card">
+          ${isBest ? '<div class="best-badge">🏆 Best Model</div>' : ''}
+          <div class="compare-model-name">${m}</div>
+          <div class="compare-pred tag-${r.prediction.toLowerCase().replace(/\s+/g,'').replace('disorder','')}">${r.prediction}</div>
+          <div class="compare-conf">${r.confidence}% confidence</div>
+        </div>
+      `;
+    }).join('');
+
+    grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch {
+    showError('Could not reach API.');
+  }
+
+  btn.textContent = '⊕ Compare All Models on This Text';
+  btn.disabled = false;
+}
+
+async function loadModelResults() {
+  try {
+    const res = await fetch(`${API}/model-results`);
+    modelResults = await res.json();
+    const results = modelResults.results;
+    const best = modelResults.best_model;
+    const classes = modelResults.classes;
+
+    // Performance cards
+    const perfGrid = document.getElementById('perfGrid');
+    perfGrid.innerHTML = Object.entries(results).map(([name, r]) => `
+      <div class="perf-card">
+        ${name === best ? '<div class="best-badge">🏆 Best Model</div>' : ''}
+        <div class="perf-model">${name}</div>
+        <div class="perf-acc">${(r.accuracy*100).toFixed(1)}%</div>
+        <div class="perf-sub">Accuracy</div>
+        <div class="perf-metrics">
+          <div class="perf-metric-row">
+            <span class="perf-metric-label">F1 Score</span>
+            <span class="perf-metric-val">${r.f1_score.toFixed(4)}</span>
+          </div>
+          <div class="perf-metric-row">
+            <span class="perf-metric-label">ROC-AUC</span>
+            <span class="perf-metric-val">${r.roc_auc.toFixed(4)}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Bar chart
+    const modelNames = Object.keys(results);
+    const accs = modelNames.map(m => +(results[m].accuracy*100).toFixed(1));
+    const f1s  = modelNames.map(m => +(results[m].f1_score*100).toFixed(1));
+    const rocs = modelNames.map(m => +(results[m].roc_auc*100).toFixed(1));
+
+    if (barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: modelNames,
+        datasets: [
+          { label: 'Accuracy %',  data: accs, backgroundColor: '#1a1410', borderWidth: 0 },
+          { label: 'F1 Score %',  data: f1s,  backgroundColor: '#c0392b', borderWidth: 0 },
+          { label: 'ROC-AUC %',  data: rocs, backgroundColor: '#9a8e82', borderWidth: 0 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#5a4e42', font: { family: 'IBM Plex Mono', size: 10 }, boxWidth: 12 } } },
+        scales: {
+          x: { ticks: { color: '#9a8e82', font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: '#9a8e82', font: { size: 10 }, callback: v => v+'%' }, grid: { color: 'rgba(26,20,16,0.06)' }, min: 70, max: 100 }
+        }
+      }
+    });
+
+    // Per-class chart (best model)
+    const bestReport = results[best].report;
+    if (bestReport) {
+      const classLabels = classes;
+      const classF1s = classLabels.map(c => bestReport[c] ? +(bestReport[c]['f1-score']*100).toFixed(1) : 0);
+      const classColors = classLabels.map(c => CLASS_COLORS[c] || '#1a1410');
+
+      if (classChart) classChart.destroy();
+      classChart = new Chart(document.getElementById('classChart'), {
+        type: 'bar',
+        data: {
+          labels: classLabels,
+          datasets: [{
+            label: 'F1 Score %',
+            data: classF1s,
+            backgroundColor: classColors,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          indexAxis: 'y',
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#9a8e82', font: { size: 10 }, callback: v => v+'%' }, grid: { color: 'rgba(26,20,16,0.06)' }, min: 0, max: 100 },
+            y: { ticks: { color: '#5a4e42', font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+checkAPI();
+loadModelResults();
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+{
+  "results": {
+    "Logistic Regression": {
+      "accuracy": 0.8767,
+      "f1_score": 0.8757,
+      "roc_auc": 0.9812,
+      "report": {
+        "Anxiety": {
+          "precision": 0.9184485330681254,
+          "recall": 0.9235,
+          "f1-score": 0.9209673398155074,
+          "support": 2000.0
+        },
+        "Bipolar": {
+          "precision": 0.940494200706001,
+          "recall": 0.9325,
+          "f1-score": 0.9364800401707256,
+          "support": 2000.0
+        },
+        "Depression": {
+          "precision": 0.8039728175640355,
+          "recall": 0.7693846923461731,
+          "f1-score": 0.7862985685071575,
+          "support": 1999.0
+        },
+        "Normal": {
+          "precision": 0.8239771646051379,
+          "recall": 0.8673009514271407,
+          "f1-score": 0.8450841668699682,
+          "support": 1997.0
+        },
+        "Personality disorder": {
+          "precision": 0.9533429533429534,
+          "recall": 0.991,
+          "f1-score": 0.9718068153959304,
+          "support": 2000.0
+        },
+        "Stress": {
+          "precision": 0.89450441609421,
+          "recall": 0.9124124124124124,
+          "f1-score": 0.9033696729435085,
+          "support": 1998.0
+        },
+        "Suicidal": {
+          "precision": 0.7928265524625268,
+          "recall": 0.7405,
+          "f1-score": 0.765770423991727,
+          "support": 2000.0
+        },
+        "accuracy": 0.8766614263255681,
+        "macro avg": {
+          "precision": 0.8753666625489985,
+          "recall": 0.8766568651693893,
+          "f1-score": 0.8756824325277892,
+          "support": 13994.0
+        },
+        "weighted avg": {
+          "precision": 0.8753800459155646,
+          "recall": 0.8766614263255681,
+          "f1-score": 0.8756914223934574,
+          "support": 13994.0
+        }
+      }
+    },
+    "SVM": {
+      "accuracy": 0.9012,
+      "f1_score": 0.8996,
+      "roc_auc": 0.9799,
+      "report": {
+        "Anxiety": {
+          "precision": 0.945489628557646,
+          "recall": 0.98,
+          "f1-score": 0.9624355511907685,
+          "support": 2000.0
+        },
+        "Bipolar": {
+          "precision": 0.9632533072023518,
+          "recall": 0.983,
+          "f1-score": 0.9730264785944073,
+          "support": 2000.0
+        },
+        "Depression": {
+          "precision": 0.8037775445960126,
+          "recall": 0.7663831915957979,
+          "f1-score": 0.7846350832266326,
+          "support": 1999.0
+        },
+        "Normal": {
+          "precision": 0.8498259572352064,
+          "recall": 0.85578367551327,
+          "f1-score": 0.8527944111776448,
+          "support": 1997.0
+        },
+        "Personality disorder": {
+          "precision": 0.9818181818181818,
+          "recall": 0.999,
+          "f1-score": 0.9903345724907063,
+          "support": 2000.0
+        },
+        "Stress": {
+          "precision": 0.9421965317919075,
+          "recall": 0.978978978978979,
+          "f1-score": 0.9602356406480118,
+          "support": 1998.0
+        },
+        "Suicidal": {
+          "precision": 0.8045356371490281,
+          "recall": 0.745,
+          "f1-score": 0.7736240913811008,
+          "support": 2000.0
+        },
+        "accuracy": 0.9011719308274975,
+        "macro avg": {
+          "precision": 0.8986995411929047,
+          "recall": 0.9011636922982925,
+          "f1-score": 0.8995836898156103,
+          "support": 13994.0
+        },
+        "weighted avg": {
+          "precision": 0.8987105851236804,
+          "recall": 0.9011719308274975,
+          "f1-score": 0.8995932662441395,
+          "support": 13994.0
+        }
+      }
+    },
+    "DistilBERT": {
+      "accuracy": 0.8403,
+      "f1_score": 0.8403,
+      "roc_auc": 0.9761
+    }
+  },
+  "classes": [
+    "Anxiety",
+    "Bipolar",
+    "Depression",
+    "Normal",
+    "Personality disorder",
+    "Stress",
+    "Suicidal"
+  ],
+  "best_model": "SVM",
+  "lstm_available": false,
+  "bert_available": true
+}

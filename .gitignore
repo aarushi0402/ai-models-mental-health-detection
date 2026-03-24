@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pkl
+bert_model/
+Combined Data.csv
+Suicide_Detection.csv
+processed_data.csv
