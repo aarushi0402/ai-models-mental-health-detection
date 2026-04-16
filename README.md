@@ -21,17 +21,18 @@ ROC-AUC
 Real-time text input analysis
 Side-by-side model comparison
 Interactive Flask dashboard
-📸 Screenshots
-
-👉 (ADD 2–3 images of your UI — THIS IS CRITICAL)
 
 🛠️ Tech Stack
 Python
 Scikit-learn
 BERT
 Flask
+
 ▶️ How to Run
 git clone https://github.com/aarushi0402/ai-models-mental-health-detection
+
 cd ai-models-mental-health-detection
+
 pip install -r requirements.txt
+
 python app.py
